@@ -1,0 +1,14 @@
+mass,0.5
+diameter,0.065
+Cd_rocket,0.5
+Cd_parachute,1.5
+parachute_area,0.2
+max_time,120
+dt,0.01
+
+time,thrust
+0,50
+1,150
+2,120
+3,80
+4,0
