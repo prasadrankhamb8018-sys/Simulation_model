@@ -19,10 +19,9 @@ def get_thrust_profile():
     print("Format: <time> <thrust>")
     print("Example: 0 50")
     print("Type 'done' to finish.\n")
-    
-    thrust_profile = {}
 
-    auto_time = 0  
+    thrust_profile = {}
+    auto_time = 0
 
     while True:
         s = input("Time Thrust: ")
@@ -38,7 +37,7 @@ def get_thrust_profile():
                 F = float(parts[0])
                 auto_time += 1
                 thrust_profile[auto_time] = F
-                print(f" Added: time={auto_time} thrust={F}")
+                print(f" Added: time={auto_time}, thrust={F}")
             except:
                 print("Invalid value. Try again.")
             continue
@@ -49,18 +48,19 @@ def get_thrust_profile():
                 t = float(parts[0])
                 F = float(parts[1])
                 thrust_profile[t] = F
-                print(f" Added: time={t} thrust={F}")
+                print(f" Added: time={t}, thrust={F}")
             except:
                 print("Invalid numbers. Try again.")
             continue
 
         print("Invalid format. Enter: <time> <thrust> or just <thrust>.")
 
+    
     if not thrust_profile:
         print("No thrust entered. Using default motor thrust curve.")
         thrust_profile = {0: 50, 1: 150, 2: 120, 3: 80, 4: 0}
 
-    return thrust_profile
+    return dict(sorted(thrust_profile.items()))
 
 
 G0 = 9.81
@@ -68,6 +68,7 @@ R_AIR = 287.05
 L = 0.0065
 T_0 = 288.15
 P_0 = 101325
+
 
 
 class Vehicle:
@@ -78,15 +79,18 @@ class Vehicle:
         self.Cd_parachute = Cd_parachute
         self.parachute_area = parachute_area
         self.thrust_profile = thrust_profile
-        self.thrust_time_max = max(self.thrust_profile.keys())
+        self.thrust_time_max = max(thrust_profile.keys())
+
 
 
 def get_temperature(altitude):
     return max(T_0 - L * altitude, 216.65)
 
+
 def get_density(altitude, T):
     pressure = P_0 * (T / T_0)**(G0 / (R_AIR * L))
     return pressure / (R_AIR * T)
+
 
 
 def calculate_forces(time, altitude, velocity, vehicle):
@@ -94,10 +98,11 @@ def calculate_forces(time, altitude, velocity, vehicle):
     rho = get_density(altitude, T)
 
     
-    thrust = np.interp(time,
-                       list(vehicle.thrust_profile.keys()),
-                       list(vehicle.thrust_profile.values())) \
-             if time <= vehicle.thrust_time_max else 0
+    thrust = np.interp(
+        time,
+        list(vehicle.thrust_profile.keys()),
+        list(vehicle.thrust_profile.values())
+    ) if time <= vehicle.thrust_time_max else 0
 
     F_g = vehicle.mass * G0
 
@@ -115,12 +120,13 @@ def calculate_forces(time, altitude, velocity, vehicle):
     return F_net
 
 
+
 def simulate(vehicle, dt, max_time):
     time = 0
     altitude = 0
     velocity = 0
 
-    T, H, V, A = [], [], [], []
+    T_list, H_list, V_list, A_list = [], [], [], []
 
     while time < max_time:
         F_net = calculate_forces(time, altitude, velocity, vehicle)
@@ -130,16 +136,17 @@ def simulate(vehicle, dt, max_time):
         altitude += velocity * dt
         time += dt
 
-        if altitude < 0:
+        if altitude < 0:  
             altitude = 0
             break
 
-        T.append(time)
-        H.append(altitude)
-        V.append(velocity)
-        A.append(acceleration)
+        T_list.append(time)
+        H_list.append(altitude)
+        V_list.append(velocity)
+        A_list.append(acceleration)
 
-    return np.array(T), np.array(H), np.array(V), np.array(A)
+    return np.array(T_list), np.array(H_list), np.array(V_list), np.array(A_list)
+
 
 
 print("\n === SYSTEM FOR SIMULATION ===")
@@ -177,7 +184,7 @@ plt.grid(True)
 plt.subplot(3, 1, 3)
 plt.plot(times, accelerations)
 plt.title("Acceleration vs Time")
-plt.ylabel("Acceleration (m/s^2)")
+plt.ylabel("Acceleration (m/s²)")
 plt.xlabel("Time (s)")
 plt.grid(True)
 
